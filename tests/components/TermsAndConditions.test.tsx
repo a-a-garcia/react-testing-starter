@@ -3,30 +3,34 @@ import TermsAndConditions from "../../src/components/TermsAndConditions";
 import userEvent from "@testing-library/user-event";
 
 describe("TermsAndConditions", () => {
-  it("should render with correct text and initial state", () => {
+  //create a helper function for rendering our component and common parts we want to query
+  const renderComponent = () => {
     render(<TermsAndConditions />);
+    
+    return {
+      heading: screen.getByRole("heading"),
+      checkbox: screen.getByRole("checkbox"),
+      button: screen.getByRole("button"),
+    }
+  }
 
-    const heading = screen.getByRole("heading");
-    expect(heading).toBeInTheDocument;
+  it("should render with correct text and initial state", () => {
+    const { heading, checkbox, button } = renderComponent();
+
+    // we don't need to check for heading, checkbox, button to be in the document, since if it isn't the renderComponent will throw an error
+    
     expect(heading).toHaveTextContent("Terms & Conditions");
-
-    const checkbox = screen.getByRole("checkbox");
-    expect(checkbox).toBeInTheDocument;
     expect(checkbox).not.toBeChecked();
-
-    const button = screen.getByRole("button");
-    expect(button).toBeInTheDocument;
     expect(button).toHaveTextContent(/submit/i);
     expect(button).toBeDisabled();
   });
 
   it("should enable the submit button when checkbox is checked", async () => {
-    render(<TermsAndConditions />);
+    const { checkbox, button } = renderComponent();
 
-    const checkbox = screen.getByRole("checkbox");
     const user = userEvent.setup();
     await user.click(checkbox);
 
-    expect(screen.getByRole("button")).toBeEnabled();
+    expect(button).toBeEnabled();
   });
 });
