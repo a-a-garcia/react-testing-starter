@@ -29,3 +29,7 @@ describe("UserAccount", () => {
     expect(name).toBeInTheDocument();
   });
 });
+
+//Notes:
+// getByRole is used when you expect the element to be present (e.g., the edit button for an admin user).
+// queryByRole is used when you expect the element to be absent (e.g., the edit button for a non-admin user).
