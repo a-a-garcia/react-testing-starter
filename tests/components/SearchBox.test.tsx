@@ -6,11 +6,6 @@ vi.mock('../src/components/SearchBox')
 describe('SearchBox', () => {
     const renderComponent = () => {
         const onChange = vi.fn();
-        onChange.mockImplementation((event) => {
-            if (event.key === 'Enter') {
-            console.log(event.target.value);
-            }
-        });
         render(<SearchBox onChange={onChange}/>)
 
         return {
