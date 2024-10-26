@@ -2,6 +2,7 @@ import { render, screen } from "@testing-library/react";
 import OrderStatusSelector from "../../src/components/OrderStatusSelector";
 import { Theme } from "@radix-ui/themes";
 import userEvent from "@testing-library/user-event";
+import exp from "constants";
 
 describe("OrderStatusSelector", () => {
   it("should render New as the default value", () => {
@@ -43,3 +44,47 @@ describe("OrderStatusSelector", () => {
     expect(button).toHaveTextContent(/new/i);
   });
 });
+
+
+//refactor
+
+describe('OrderStatusSelector2', () => {
+  const renderComponent = () => {
+    render(
+      <Theme>
+        <OrderStatusSelector onChange={vi.fn()} />
+      </Theme>
+    );
+
+    return { 
+      trigger: screen.getByRole('combobox'),
+      // options: screen.findAllByRole('option'),
+      // we can also use "lazy evaluation" which is a technique that postpones execution of a function until its result is needed.
+      getOptions: () => screen.findAllByRole('option'),
+      user: userEvent.setup()
+    }
+  }
+
+  it('should render New as the default value 2', () => {
+    const { trigger } = renderComponent();
+
+    expect(trigger).toHaveTextContent(/new/i);
+  })
+
+  it('should render the correct statuses 2', async () => {
+    const { trigger,
+      //  options, 
+        getOptions,
+       user 
+      } = renderComponent();
+
+    await user.click(trigger);
+    // const optionsArray = await options;
+    const optionsArray = await getOptions();
+
+    expect(optionsArray).toHaveLength(3);
+    const labels = optionsArray.map(option => option.textContent);
+    expect(labels).toEqual(["New", "Processed", "Fulfilled"]);
+    expect(trigger).toHaveTextContent(/new/i);
+  });
+})
