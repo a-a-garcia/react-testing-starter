@@ -3,6 +3,7 @@ import OrderStatusSelector from "../../src/components/OrderStatusSelector";
 import { Theme } from "@radix-ui/themes";
 import userEvent from "@testing-library/user-event";
 import exp from "constants";
+import { get } from "http";
 
 describe("OrderStatusSelector", () => {
   it("should render New as the default value", () => {
@@ -50,9 +51,11 @@ describe("OrderStatusSelector", () => {
 
 describe('OrderStatusSelector2', () => {
   const renderComponent = () => {
+    const onChange = vi.fn();
+
     render(
       <Theme>
-        <OrderStatusSelector onChange={vi.fn()} />
+        <OrderStatusSelector onChange={onChange} />
       </Theme>
     );
 
@@ -61,7 +64,9 @@ describe('OrderStatusSelector2', () => {
       // options: screen.findAllByRole('option'),
       // we can also use "lazy evaluation" which is a technique that postpones execution of a function until its result is needed.
       getOptions: () => screen.findAllByRole('option'),
-      user: userEvent.setup()
+      getOption: (label: RegExp) => screen.findByRole('option', { name: label }),
+      user: userEvent.setup(),
+      onChange
     }
   }
 
@@ -87,4 +92,65 @@ describe('OrderStatusSelector2', () => {
     expect(labels).toEqual(["New", "Processed", "Fulfilled"]);
     expect(trigger).toHaveTextContent(/new/i);
   });
+
+  // test user interaction - my attempt (these tests are more like UI Update tests)
+  // it('should set the value as "New" when the "New" option is selected', async () => {
+  //   const { trigger, getOptions, user } = renderComponent();
+
+  //   await user.click(trigger);
+  //   const options = await getOptions();
+  //   await user.click(options[0]);
+  //   expect(trigger).toHaveTextContent(/new/i);
+  // })
+
+  // it('should set the value as "Processed" when the "Processed" option is selected', async () => {
+  //   const { trigger, getOptions, user } = renderComponent();
+
+  //   await user.click(trigger);
+  //   const options = await getOptions();
+  //   await user.click(options[1]);
+  //   expect(trigger).toHaveTextContent(/processed/i);
+  // })
+
+  // it('should set the value as "Fulfilled" when the "Fulfilled" option is selected', async () => {
+  //   const { trigger, getOptions, user } = renderComponent();
+
+  //   await user.click(trigger);
+  //   const options = await getOptions();
+  //   await user.click(options[2]);
+  //   expect(trigger).toHaveTextContent(/fulfilled/i);
+  // })
+
+  // test user interaction - solution - these tests are more focused on the onChange prop 
+  // can use parameterized tests to avoid duplication
+  it.each([
+    { label: /processed/i, value: 'processed'},
+    { label: /fulfilled/i, value: 'fulfilled'},
+    // no case for "New" because it's the default value
+  ])('should call onChange with $value when the $label option is selected', async ({ label, value }) => {
+    const { trigger, user, onChange, getOption } = renderComponent()
+
+    await user.click(trigger)
+    const option = getOption(label);
+    await user.click(await option);
+
+    expect(onChange).toHaveBeenCalledWith(value);
+  });
+
+  // need a separate test for the default value because it's not an option that the user can select, unless they select another option first
+  it("should call onChange with 'new' when the default value is selected", async () => {
+    const { trigger, user, onChange, getOption } = renderComponent();
+
+    await user.click(trigger);
+    
+    const processedOption = await getOption(/processed/i)
+    await user.click(processedOption);
+
+    await user.click(trigger);
+    
+    const newOption = await getOption(/new/i)
+    await user.click(newOption);
+
+    expect(onChange).toHaveBeenCalledWith('new');
+  })
 })
