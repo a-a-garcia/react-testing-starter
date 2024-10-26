@@ -1,5 +1,11 @@
 import "@testing-library/jest-dom/vitest";
 import ResizeObserver from "resize-observer-polyfill";
+import { server } from "./mocks/server";
+
+beforeAll(() => server.listen());
+afterEach(() => server.resetHandlers());
+afterAll(() => server.close());
+
 // this solves a "matchmedia not found" error
 // this is required because our tests are run in a Node environment, simulated in a JSDOM environment. It doesn't have a window object the matchMedia property, so we need to mock it.
 Object.defineProperty(window, "matchMedia", {
