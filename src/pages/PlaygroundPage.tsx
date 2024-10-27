@@ -5,6 +5,7 @@ import SearchBox from "../components/SearchBox";
 import TermsAndConditions from "../components/TermsAndConditions";
 import ToastDemo from "../components/ToastDemo";
 import OrderStatusSelector from "../components/OrderStatusSelector";
+import BrowseProducts from "./BrowseProductsPage";
 
 const PlaygroundPage = () => {
   // return <Onboarding />;
@@ -22,11 +23,15 @@ const PlaygroundPage = () => {
   //   </>
   // );
 
-  return (
-    // <OrderStatusSelector onChange={value => console.log(value)} />
+  // return (
+  //   // <OrderStatusSelector onChange={value => console.log(value)} />
 
-    //whenever you have an arrow function that takes a value and passes it to a single function, you can simplify by just adding a reference to the function
-    <OrderStatusSelector onChange={console.log} />
+  //   //whenever you have an arrow function that takes a value and passes it to a single function, you can simplify by just adding a reference to the function
+  //   <OrderStatusSelector onChange={console.log} />
+  // )
+
+  return (
+    <BrowseProducts />
   )
 };
 
