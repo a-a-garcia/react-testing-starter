@@ -7,5 +7,14 @@ export const handlers = [
             { id: 2, name: 'Beauty' },
             { id: 1, name: 'Gardening' },
         ])
+    }),
+
+    //define a handler for the API call on ProductList.tsx
+    http.get('/products', () => {
+        return HttpResponse.json([
+            { id: 1, name: 'Laptop' },
+            { id: 2, name: 'Lipstick' },
+            { id: 3, name: 'Shovel' },
+        ])
     })
 ]
