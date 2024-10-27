@@ -2,15 +2,27 @@ import { render, screen } from '@testing-library/react'
 import { server } from '../mocks/server'
 import { http, HttpResponse } from 'msw'
 import ProductDetail from '../../src/components/ProductDetail'
-import { products } from '../mocks/data'
+import { db } from '../mocks/db'
+import { Product } from '../../src/entities'
 
 describe('ProductDetail', () => {
-    it('should render the list of products', async () => {
-        render(<ProductDetail productId={1} />)
+    let productId: number
+    beforeAll(() => {
+        const product = db.product.create();
+        productId = product.id
+    })
+    afterAll(() => {
+       db.product.delete({ where: { id: { equals: productId } } })
+    })
+
+    it('should render product details', async () => {
+        const product = db.product.findFirst({ where: { id: { equals: productId } } })
+
+        render(<ProductDetail productId={productId} />)
 
         // we pass the name and price to convert to a regular expression, to avoid our test improperly formatting the elements in the DOM
-        expect(await screen.findByText(new RegExp(products[0].name))).toBeInTheDocument();
-        expect(await screen.findByText(new RegExp(products[0].price.toString()))).toBeInTheDocument();
+        expect(await screen.findByText(new RegExp(product!.name))).toBeInTheDocument();
+        expect(await screen.findByText(new RegExp(product!.price.toString()))).toBeInTheDocument();
     })
 
     it('should render message if product not found', async () => {
