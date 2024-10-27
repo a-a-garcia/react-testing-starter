@@ -9,6 +9,7 @@ const ProductDetail = ({ productId }: { productId: number }) => {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    // prevent extra requests if productId is not valid
     if (!productId) {
       setError("Invalid ProductId");
       return;
