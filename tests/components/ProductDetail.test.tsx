@@ -1,9 +1,10 @@
-import { render, screen } from '@testing-library/react'
+import { render, screen, waitForElementToBeRemoved } from '@testing-library/react'
 import { server } from '../mocks/server'
-import { http, HttpResponse } from 'msw'
+import { delay, http, HttpResponse } from 'msw'
 import ProductDetail from '../../src/components/ProductDetail'
 import { db } from '../mocks/db'
 import { Product } from '../../src/entities'
+import { de } from '@faker-js/faker'
 
 describe('ProductDetail', () => {
     let productId: number
@@ -47,5 +48,33 @@ describe('ProductDetail', () => {
         render(<ProductDetail productId={1} />)
 
         expect(await screen.findByText(/error/i)).toBeInTheDocument();
+    })
+
+    it('should render a loading indicator when fetching data', async () => {
+        server.use(http.get('/product/1', async () => {
+            await delay();
+            return HttpResponse.json([])
+        }))
+
+        render(<ProductDetail productId={1} />)
+
+        expect(await screen.findByText(/loading/i)).toBeInTheDocument();
+    })
+
+    it('should remove the loading indicator after data is fetched', async () => {
+        render(<ProductDetail productId={1} />)
+
+        await waitForElementToBeRemoved(() => screen.queryByText(/loading/i))
+    })
+
+    it('should remove the loading indicator after data is fetched', async () => {
+        server.use(http.get('/products/1', async () => {
+            await delay();
+            return HttpResponse.json([])
+        }))
+
+        render(<ProductDetail productId={1} />)
+
+        await waitForElementToBeRemoved(() => screen.queryByText(/loading/i))
     })
 })
