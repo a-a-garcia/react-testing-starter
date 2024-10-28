@@ -56,7 +56,8 @@ function BrowseProducts() {
           <Skeleton />
         </div>
       );
-    if (errorCategories) return <div>Error: {errorCategories}</div>;
+    // our test will pass once we return null here. (TDD)
+    if (errorCategories) return null;
     return (
       <Select.Root
         onValueChange={(categoryId) =>
