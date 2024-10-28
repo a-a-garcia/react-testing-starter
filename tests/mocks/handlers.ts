@@ -5,5 +5,6 @@ import { db } from "./db";
 
 export const handlers = [
     // returns an array of request handlers for all http methods
-  ...db.product.toHandlers('rest')
+  ...db.product.toHandlers('rest'),
+  ...db.category.toHandlers('rest'),
 ];
