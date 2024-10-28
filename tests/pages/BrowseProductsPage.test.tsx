@@ -10,6 +10,7 @@ import userEvent from "@testing-library/user-event";
 import { Category, Product } from "../../src/entities";
 import { CartProvider } from "../../src/providers/CartProvider";
 import { simulateDelay, simulateError } from "../utils";
+import AllProviders from "../AllProviders";
 
 describe("BrowseProductsPage", () => {
   const categories: Category[] = [];
@@ -150,6 +151,12 @@ describe("BrowseProductsPage", () => {
 });
 
 const renderComponent = () => {
+  render(
+    //we must wrap the component in CartProvider as well to avoid `getItem()` is not a function
+        <BrowseProducts />
+    , { wrapper: AllProviders }
+  );
+
   const getCategorySkeleton = () =>
     screen.getByRole("progressbar", { name: /categories/i });
   const getProductSkeleton = () =>
@@ -176,14 +183,6 @@ const renderComponent = () => {
     });
   };
 
-  render(
-    //we must wrap the component in CartProvider as well to avoid `getItem()` is not a function
-    <CartProvider>
-      <Theme>
-        <BrowseProducts />
-      </Theme>
-    </CartProvider>
-  );
 
   return {
     getProductSkeleton,

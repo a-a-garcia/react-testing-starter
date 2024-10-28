@@ -5,51 +5,32 @@ import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
 import QuantitySelector from "../components/QuantitySelector";
 import { Category, Product } from "../entities";
+import { useQuery } from "react-query";
 
 function BrowseProducts() {
-  const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [isProductsLoading, setProductsLoading] = useState(false);
-  const [isCategoriesLoading, setCategoriesLoading] = useState(false);
-  const [errorProducts, setErrorProducts] = useState("");
-  const [errorCategories, setErrorCategories] = useState("");
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: () => axios.get<Category[]>("/categories").then((res) => res.data),
+  });
+
+  const productsQuery = useQuery<Product[], Error>({
+    queryKey: ["products"],
+    queryFn: () => axios.get<Product[]>("/products").then((res) => res.data),
+  });
+
   const [selectedCategoryId, setSelectedCategoryId] = useState<
     number | undefined
   >();
 
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setProductsLoading(true);
-        const { data } = await axios.get<Product[]>("/products");
-        setProducts(data);
-      } catch (error) {
-        if (error instanceof AxiosError) setErrorProducts(error.message);
-        else setErrorProducts("An unexpected error occurred");
-      } finally {
-        setProductsLoading(false);
-      }
-    };
-
-    const fetchCategories = async () => {
-      try {
-        setCategoriesLoading(true);
-        const { data } = await axios.get<Category[]>("/categories");
-        setCategories(data);
-      } catch (error) {
-        if (error instanceof AxiosError) setErrorCategories(error.message);
-        else setErrorCategories("An unexpected error occurred");
-      } finally {
-        setCategoriesLoading(false);
-      }
-    };
-    fetchCategories();
-    fetchProducts();
-  }, []);
-
-  if (errorProducts) return <div>Error: {errorProducts}</div>;
+  if (productsQuery.error) return <div>Error: {productsQuery.error.message}</div>;
 
   const renderCategories = () => {
+    const {
+      data: categories,
+      isLoading: isCategoriesLoading,
+      error: errorCategories,
+    } = categoriesQuery;
+
     if (isCategoriesLoading)
       return (
         <div role="progressbar" aria-label="loading categories">
@@ -81,12 +62,14 @@ function BrowseProducts() {
   };
 
   const renderProducts = () => {
+    const { data: products, isLoading: isProductsLoading, error: errorProducts } = productsQuery;
     const skeletons = [1, 2, 3, 4, 5];
 
     if (errorProducts) return <div>Error: {errorProducts}</div>;
 
     const visibleProducts = selectedCategoryId
-      ? products.filter((p) => p.categoryId === selectedCategoryId)
+      //if a category is selected, we definitely have the products on the client side. So we can safely use `!` here
+      ? products!.filter((p) => p.categoryId === selectedCategoryId)
       : products;
 
     return (
@@ -98,7 +81,10 @@ function BrowseProducts() {
             <Table.ColumnHeaderCell></Table.ColumnHeaderCell>
           </Table.Row>
         </Table.Header>
-        <Table.Body role={isProductsLoading ? "progressbar" : undefined} aria-label={isProductsLoading ? 'Loading products' : undefined}>
+        <Table.Body
+          role={isProductsLoading ? "progressbar" : undefined}
+          aria-label={isProductsLoading ? "Loading products" : undefined}
+        >
           {isProductsLoading &&
             skeletons.map((skeleton) => (
               <Table.Row key={skeleton}>
@@ -114,7 +100,7 @@ function BrowseProducts() {
               </Table.Row>
             ))}
           {!isProductsLoading &&
-            visibleProducts.map((product) => (
+            visibleProducts!.map((product) => (
               <Table.Row key={product.id}>
                 <Table.Cell>{product.name}</Table.Cell>
                 <Table.Cell>${product.price}</Table.Cell>
