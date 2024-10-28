@@ -4,14 +4,14 @@ import {
   waitFor,
   waitForElementToBeRemoved,
 } from "@testing-library/react";
-import { server } from "../mocks/server";
-import { http, delay, HttpResponse } from "msw";
 import BrowseProducts from "../../src/pages/BrowseProductsPage";
 import { Theme } from "@radix-ui/themes";
 import { db } from "../mocks/db";
 import userEvent from "@testing-library/user-event";
 import { Category, Product } from "../../src/entities";
 import { CartProvider } from "../../src/providers/CartProvider";
+import { get } from "http";
+import { simulateDelay, simulateError } from "../utils";
 
 describe("BrowseProductsPage", () => {
   const renderComponent = () => {
@@ -23,18 +23,28 @@ describe("BrowseProductsPage", () => {
         </Theme>
       </CartProvider>
     );
+
+    return {
+      getProductSkeleton: () =>
+        screen.getByRole("progressbar", { name: /products/i }),
+      getCategorySkeleton: () =>
+        screen.getByRole("progressbar", { name: /categories/i }),
+      getCategoriesComboBox: () => screen.queryByRole("combobox")
+    };
   };
 
   const categories: Category[] = [];
   const products: Product[] = [];
   //create 3 category objects before running the tests
   beforeAll((item) => {
-    [1, 2, 3].forEach(() => {
+    [1, 2, 3].forEach((item) => {
       // pass in the item to ensure the category name is unique
       const category = db.category.create({ name: "Category" + item });
-      const product = db.product.create();
       categories.push(category);
-      products.push(product);
+      [1, 2, 3].forEach(() => {
+        const product = db.product.create();
+        products.push(product);
+      });
     });
   });
   //clean them up after running the tests, since the db object is global and shared between tests
@@ -47,73 +57,58 @@ describe("BrowseProductsPage", () => {
   });
 
   it("should show a loading skeleton when fetching categories", () => {
-    server.use(
-      http.get("/categories", async () => {
-        await delay();
-        return HttpResponse.json([]);
-      })
-    );
+    simulateDelay("/categories")
 
-    renderComponent();
+    const {getCategorySkeleton} = renderComponent();
 
     expect(
-      screen.getByRole("progressbar", { name: /categories/i })
+      getCategorySkeleton()
     ).toBeInTheDocument();
   });
 
   it("should hide the loading skeleton after fetching categories", async () => {
-    renderComponent();
+    const { getProductSkeleton } = renderComponent();
 
-    await waitForElementToBeRemoved(() =>
-      screen.queryByRole("progressbar", { name: /categories/i })
-    );
+    await waitForElementToBeRemoved(getProductSkeleton);
   });
 
   it("should show a loading skeleton when fetching products", () => {
-    server.use(
-      http.get("/products", async () => {
-        await delay();
-        return HttpResponse.json([]);
-      })
-    );
+    simulateDelay("/products")
 
-    renderComponent();
+    const {getProductSkeleton} = renderComponent();
 
     expect(
-      screen.getByRole("progressbar", { name: /products/i })
+      getProductSkeleton()
     ).toBeInTheDocument();
   });
 
   it("should hide the loading skeleton after fetching products", async () => {
-    renderComponent();
+    const {getProductSkeleton} = renderComponent();
 
-    await waitForElementToBeRemoved(() =>
-      screen.queryByRole("progressbar", { name: /products/i })
-    );
+    await waitForElementToBeRemoved(getProductSkeleton)
   });
 
   // we want this test to fail first as part of TDD
   it("should not render an error if categories cannot be fetched", async () => {
-    server.use(http.get("/categories", () => HttpResponse.error()));
+    simulateError("/categories")
 
-    renderComponent();
+    const {getProductSkeleton, getCategoriesComboBox} = renderComponent();
 
     // this is a false positive, beause when we render the DOM initially, there is no error message
     // before we make this assertion we need to wait for the skeleton to be removed
-    await waitForElementToBeRemoved(() =>
-      screen.queryByRole("progressbar", { name: /categories/i })
-    );
+    await waitForElementToBeRemoved(getProductSkeleton)
 
     expect(screen.queryByText(/error/i)).not.toBeInTheDocument();
 
+    const comboBox = getCategoriesComboBox();
     // categories dropdown should not be rendered
     expect(
-      screen.queryByRole("combobox", { name: /categories/i })
+      comboBox
     ).not.toBeInTheDocument();
   });
 
   it("should render an error if products cannot be fetched", async () => {
-    server.use(http.get("/products", () => HttpResponse.error()));
+    simulateError("/products")
 
     renderComponent();
 
@@ -121,13 +116,16 @@ describe("BrowseProductsPage", () => {
   });
 
   it("should render the categories in the dropdown", async () => {
-    renderComponent();
+    const {getCategorySkeleton, getCategoriesComboBox} = renderComponent();
 
-    const combobox = await screen.findByRole("combobox");
+    await waitForElementToBeRemoved(getCategorySkeleton);
+
+    const combobox = getCategoriesComboBox();
 
     const user = userEvent.setup();
 
-    await user.click(combobox);
+    // in this case, we know that combobox exists
+    await user.click(combobox!);
 
     expect(screen.getByRole("option", { name: /all/i })).toBeInTheDocument();
 
@@ -140,12 +138,11 @@ describe("BrowseProductsPage", () => {
 
   //can use .skip to skip a test
   it("should render products", async () => {
-    renderComponent();
+    const { getProductSkeleton } = renderComponent();
 
     // need to wait for the product skeleton to be removed or test will fail
-    await waitForElementToBeRemoved(() =>
-      screen.queryByRole("progressbar", { name: /products/i })
-    );
+    // we don't call getProductSkeleton with () because waitForElementToBeRemoved expects a function
+    await waitForElementToBeRemoved(getProductSkeleton);
 
     products.forEach((product) => {
       expect(screen.getByText(product.name)).toBeInTheDocument();
