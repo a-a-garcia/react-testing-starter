@@ -27,9 +27,8 @@ describe("ProductForm", () => {
     });
 
     return {
-      waitForFormToLoad: () => screen.findByRole("form"),
-      // this needs to be a function because if not, it will look for the input before the form finishes loading
-      getInputs: () => {
+      waitForFormToLoad: async () => {
+        await screen.findByRole("form")
         return {
           nameInput: screen.getByPlaceholderText(/name/i),
           priceInput: screen.getByPlaceholderText(/price/i),
@@ -40,10 +39,9 @@ describe("ProductForm", () => {
   };
 
   it("should render form fields", async () => {
-    const { waitForFormToLoad, getInputs } = renderComponent();
+    const { waitForFormToLoad } = renderComponent();
     // we don't want to use different methods to assert, so we can 1) use find to wait for the form to be rendered
-    await waitForFormToLoad();
-    const { nameInput, priceInput, categoryInput } = getInputs();
+   const { nameInput, priceInput, categoryInput } = await waitForFormToLoad();
 
     // or 2) wait for the loading indicator to be removed
     // await waitForElementToBeRemoved(() => screen.queryByText(/loading/i))
@@ -66,11 +64,10 @@ describe("ProductForm", () => {
       categoryId: category.id,
     };
 
-    const { waitForFormToLoad, getInputs } = renderComponent(product);
+    const { waitForFormToLoad } = renderComponent(product);
 
     // we don't want to use different methods to assert, so we can 1) use find to wait for the form to be rendered
-    await waitForFormToLoad();
-    const inputs = getInputs();
+    const inputs = await waitForFormToLoad();
 
     // or 2) wait for the loading indicator to be removed
     // await waitForElementToBeRemoved(() => screen.queryByText(/loading/i))
@@ -85,4 +82,12 @@ describe("ProductForm", () => {
     //dropdown assertion
     expect(inputs.categoryInput).toHaveTextContent(category.name);
   });
+
+  it('should put focus on the name field', async () => {
+    const {waitForFormToLoad} = renderComponent();
+
+    const {nameInput} = await waitForFormToLoad();
+
+    expect(nameInput).toHaveFocus();
+  })
 });
