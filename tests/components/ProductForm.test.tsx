@@ -271,4 +271,13 @@ describe("ProductForm", () => {
 
     expect(form.submitButton).not.toBeDisabled();
   })
+
+  it('should display an error when name is only whitespace', async () => {
+    const { waitForFormToLoad, expectErrorToBeInTheDocument } = renderComponent();
+
+    const form = await waitForFormToLoad();
+    await form.fill({ ...form.validData, name: ' ' })
+
+    expectErrorToBeInTheDocument(/blank/i);
+  })
 });
