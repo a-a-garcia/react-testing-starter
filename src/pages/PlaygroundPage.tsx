@@ -6,6 +6,7 @@ import TermsAndConditions from "../components/TermsAndConditions";
 import ToastDemo from "../components/ToastDemo";
 import OrderStatusSelector from "../components/OrderStatusSelector";
 import BrowseProducts from "./BrowseProductsPage";
+import ProductForm from "../components/ProductForm";
 
 const PlaygroundPage = () => {
   // return <Onboarding />;
@@ -30,8 +31,12 @@ const PlaygroundPage = () => {
   //   <OrderStatusSelector onChange={console.log} />
   // )
 
+  // return (
+  //   <BrowseProducts />
+  // )
+
   return (
-    <BrowseProducts />
+    <ProductForm />
   )
 };
 
