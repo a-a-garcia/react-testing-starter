@@ -1,18 +1,14 @@
-import { Select, Table } from "@radix-ui/themes";
-import axios, { AxiosError } from "axios";
-import { useEffect, useState } from "react";
+import { Table } from "@radix-ui/themes";
+import axios from "axios";
+import { useState } from "react";
 import Skeleton from "react-loading-skeleton";
 import "react-loading-skeleton/dist/skeleton.css";
-import QuantitySelector from "../components/QuantitySelector";
-import { Category, Product } from "../entities";
 import { useQuery } from "react-query";
+import QuantitySelector from "../components/QuantitySelector";
+import { Product } from "../entities";
+import CategorySelect from "../components/CategorySelect";
 
 function BrowseProducts() {
-  const categoriesQuery = useQuery({
-    queryKey: ["categories"],
-    queryFn: () => axios.get<Category[]>("/categories").then((res) => res.data),
-  });
-
   const productsQuery = useQuery<Product[], Error>({
     queryKey: ["products"],
     queryFn: () => axios.get<Product[]>("/products").then((res) => res.data),
@@ -22,54 +18,22 @@ function BrowseProducts() {
     number | undefined
   >();
 
-  if (productsQuery.error) return <div>Error: {productsQuery.error.message}</div>;
-
-  const renderCategories = () => {
-    const {
-      data: categories,
-      isLoading: isCategoriesLoading,
-      error: errorCategories,
-    } = categoriesQuery;
-
-    if (isCategoriesLoading)
-      return (
-        <div role="progressbar" aria-label="loading categories">
-          <Skeleton />
-        </div>
-      );
-    // our test will pass once we return null here. (TDD)
-    if (errorCategories) return null;
-    return (
-      <Select.Root
-        onValueChange={(categoryId) =>
-          setSelectedCategoryId(parseInt(categoryId))
-        }
-      >
-        <Select.Trigger placeholder="Filter by Category" />
-        <Select.Content>
-          <Select.Group>
-            <Select.Label>Category</Select.Label>
-            <Select.Item value="all">All</Select.Item>
-            {categories?.map((category) => (
-              <Select.Item key={category.id} value={category.id.toString()}>
-                {category.name}
-              </Select.Item>
-            ))}
-          </Select.Group>
-        </Select.Content>
-      </Select.Root>
-    );
-  };
+  if (productsQuery.error)
+    return <div>Error: {productsQuery.error.message}</div>;
 
   const renderProducts = () => {
-    const { data: products, isLoading: isProductsLoading, error: errorProducts } = productsQuery;
+    const {
+      data: products,
+      isLoading: isProductsLoading,
+      error: errorProducts,
+    } = productsQuery;
     const skeletons = [1, 2, 3, 4, 5];
 
     if (errorProducts) return <div>Error: {errorProducts}</div>;
 
     const visibleProducts = selectedCategoryId
-      //if a category is selected, we definitely have the products on the client side. So we can safely use `!` here
-      ? products!.filter((p) => p.categoryId === selectedCategoryId)
+      ? //if a category is selected, we definitely have the products on the client side. So we can safely use `!` here
+        products!.filter((p) => p.categoryId === selectedCategoryId)
       : products;
 
     return (
@@ -117,7 +81,9 @@ function BrowseProducts() {
   return (
     <div>
       <h1>Products</h1>
-      <div className="max-w-xs">{renderCategories()}</div>
+      <div className="max-w-xs">
+        <CategorySelect onChange={(categoryId) => setSelectedCategoryId(categoryId)} />
+      </div>
       {renderProducts()}
     </div>
   );
