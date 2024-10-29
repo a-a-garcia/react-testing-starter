@@ -4,6 +4,7 @@ import ProductForm from "../../src/components/ProductForm";
 import { Category, Product } from "../../src/entities";
 import AllProviders from "../AllProviders";
 import { db } from "../mocks/db";
+import { Toaster } from "react-hot-toast";
 
 describe("ProductForm", () => {
   let category: Category;
@@ -23,7 +24,12 @@ describe("ProductForm", () => {
   });
 
   const renderComponent = (product?: Product) => {
-    render(<ProductForm product={product} onSubmit={vi.fn()} />, {
+    const onSubmit = vi.fn();
+
+    render(<>
+    <ProductForm product={product} onSubmit={onSubmit} />
+    <Toaster />
+    </>, {
       wrapper: AllProviders,
     });
 
@@ -37,10 +43,11 @@ describe("ProductForm", () => {
       id: 1,
       name: 'a',
       price: 1,
-      categoryId: 1
+      categoryId: category.id
     }
 
     return {
+      onSubmit,
       expectErrorToBeInTheDocument: (errorMessage: RegExp) => {
         const error = screen.getByRole("alert");
         expect(error).toBeInTheDocument();
@@ -200,4 +207,32 @@ describe("ProductForm", () => {
       expectErrorToBeInTheDocument(errorMessage);
     }
   );
+
+  it('should call onSubmit with the correct data', async () => {
+    const { waitForFormToLoad, onSubmit } = renderComponent();
+
+    const form = await waitForFormToLoad();
+    await form.fill({ ...form.validData })
+
+    const { id, ...formData } = form.validData
+    expect(onSubmit).toHaveBeenCalledWith(formData);
+  })
+
+  it('should display a toast if submission fails', async () => {
+    const { waitForFormToLoad, onSubmit } = renderComponent();
+    
+    //simulate a failure
+    onSubmit.mockRejectedValue({});
+
+    const form = await waitForFormToLoad();
+    await form.fill({ ...form.validData })
+
+    // use screen.debug() to see how our toast notification is rendered - in this case its a div with a role of "status"
+    // make sure to render your component with a <Toaster /> (if using react-hot-toast) or else you won't see the toast
+    // screen.debug()
+
+    const toast = await screen.findByRole('status');
+    expect(toast).toBeInTheDocument();
+    expect(toast).toHaveTextContent(/error/i)
+  })
 });
