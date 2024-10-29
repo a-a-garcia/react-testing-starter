@@ -66,7 +66,9 @@ describe("ProductForm", () => {
           if (product.price !== undefined) {
             await user.type(priceInput, product.price.toString());
           }
-          
+
+          // this clear warnings for 
+          await user.tab();
           await user.click(categoryInput);
           const options = screen.getAllByRole("option");
           await user.click(options[0]);
@@ -139,6 +141,7 @@ describe("ProductForm", () => {
     expect(nameInput).toHaveFocus();
   });
 
+  // you can use it.only to only run a single chosen test
   it.each([
     {
       scenario: "missing",
