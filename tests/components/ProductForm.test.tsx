@@ -235,4 +235,40 @@ describe("ProductForm", () => {
     expect(toast).toBeInTheDocument();
     expect(toast).toHaveTextContent(/error/i)
   })
+
+  it('should disable the submit button upon submission', async () => {
+    const { waitForFormToLoad, onSubmit } = renderComponent();
+
+    // we want to test the middle state, while we are waiting for server to get back to us
+    // promise doesn't need to do anything, we just want to wait for it to resolve
+    onSubmit.mockReturnValue(new Promise(() => {}))
+
+    const form = await waitForFormToLoad();
+    await form.fill({ ...form.validData })
+
+    expect(form.submitButton).toBeDisabled();
+  })
+
+  it('should re-enable the submit button after submission', async () => {
+    const { waitForFormToLoad, onSubmit } = renderComponent();
+
+    // we don't care about the value here, we just want to wait for the promise to resolve
+    onSubmit.mockResolvedValue({});
+
+    const form = await waitForFormToLoad();
+    await form.fill({ ...form.validData })
+
+    expect(form.submitButton).not.toBeDisabled();
+  })
+
+  it('should re-enable the submit button after submission', async () => {
+    const { waitForFormToLoad, onSubmit } = renderComponent();
+
+    onSubmit.mockRejectedValue('error');
+
+    const form = await waitForFormToLoad();
+    await form.fill({ ...form.validData })
+
+    expect(form.submitButton).not.toBeDisabled();
+  })
 });
