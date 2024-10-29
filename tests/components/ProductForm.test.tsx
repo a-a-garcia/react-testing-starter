@@ -27,14 +27,60 @@ describe("ProductForm", () => {
       wrapper: AllProviders,
     });
 
+    
+    type FormData = {
+      // here, we iterate over all the keys of the Product type, and for each key we allow values to be anything (avoids typing errors with `undefined`)
+      [K in keyof Product]: any;
+    }
+    
+    const validData: FormData = {
+      id: 1,
+      name: 'a',
+      price: 1,
+      categoryId: 1
+    }
+
     return {
+      expectErrorToBeInTheDocument: (errorMessage: RegExp) => {
+        const error = screen.getByRole("alert");
+        expect(error).toBeInTheDocument();
+        expect(error).toHaveTextContent(errorMessage);
+      },
+
       waitForFormToLoad: async () => {
         await screen.findByRole("form");
+        //this object represents our form
+        // must define these outside of the returned object to access them inside of `fill` method
+        const nameInput = screen.getByPlaceholderText(/name/i);
+        const priceInput = screen.getByPlaceholderText(/price/i);
+        const categoryInput = screen.getByRole("combobox", { name: /category/i });
+        const submitButton = screen.getByRole("button");
+
+        const fill = async (product: FormData) => {
+          const user = userEvent.setup();
+          // we are not filling out the name field for validation purposes
+          // note we are passing a string to the type method, this is because the value of the input field is always a string
+          if (product.name !== undefined) {
+            await user.type(nameInput, product.name);
+          }
+          if (product.price !== undefined) {
+            await user.type(priceInput, product.price.toString());
+          }
+          
+          await user.click(categoryInput);
+          const options = screen.getAllByRole("option");
+          await user.click(options[0]);
+          await user.click(submitButton);
+        };
+
         return {
-          nameInput: screen.getByPlaceholderText(/name/i),
-          priceInput: screen.getByPlaceholderText(/price/i),
-          categoryInput: screen.getByRole("combobox", { name: /category/i }),
-          submitButton: screen.getByRole("button"),
+          nameInput,
+          priceInput,
+          categoryInput,
+          submitButton,
+          // add a method for filling out the form
+          fill,
+          validData
         };
       },
     };
@@ -106,24 +152,12 @@ describe("ProductForm", () => {
   ])(
     "should display an error if name is $scenario",
     async ({ name, errorMessage }) => {
-      const { waitForFormToLoad } = renderComponent();
+      const { waitForFormToLoad, expectErrorToBeInTheDocument } = renderComponent();
 
       const form = await waitForFormToLoad();
-      const user = userEvent.setup();
-      // we are not filling out the name field for validation purposes
-      // note we are passing a string to the type method, this is because the value of the input field is always a string
-      if (name !== undefined) {
-        await user.type(form.nameInput, name);
-      }
-      await user.type(form.priceInput, "10");
-      await user.click(form.categoryInput);
-      const options = screen.getAllByRole("option");
-      await user.click(options[0]);
-      await user.click(form.submitButton);
+      await form.fill({ ...form.validData, name });
 
-      const error = screen.getByRole("alert");
-      expect(error).toBeInTheDocument();
-      expect(error).toHaveTextContent(errorMessage);
+      expectErrorToBeInTheDocument(errorMessage);
     }
   );
 
@@ -149,30 +183,18 @@ describe("ProductForm", () => {
     },
     {
       scenario: "not a number",
-      price: 'a',
+      price: "a",
       errorMessage: /required/i,
     },
   ])(
     "should display an error if price is $scenario",
     async ({ price, errorMessage }) => {
-      const { waitForFormToLoad } = renderComponent();
+      const { waitForFormToLoad, expectErrorToBeInTheDocument } = renderComponent();
 
       const form = await waitForFormToLoad();
-      const user = userEvent.setup();
-      // we are not filling out the name field for validation purposes
-      // note we are passing a string to the type method, this is because the value of the input field is always a string
-      await user.type(form.nameInput, "a");
-      if (price !== undefined) {
-        await user.type(form.priceInput, price.toString());
-      }
-      await user.click(form.categoryInput);
-      const options = screen.getAllByRole("option");
-      await user.click(options[0]);
-      await user.click(form.submitButton);
+      await form.fill({ ...form.validData, price })
 
-      const error = screen.getByRole("alert");
-      expect(error).toBeInTheDocument();
-      expect(error).toHaveTextContent(errorMessage);
+      expectErrorToBeInTheDocument(errorMessage);
     }
   );
 });
